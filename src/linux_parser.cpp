@@ -77,31 +77,36 @@ float LinuxParser::MemoryUtilization() {
   std::ifstream stream(kProcDirectory + kMeminfoFilename);
   if (stream.is_open()) {
     std::string line, item, itemsize, unit;
-    
-    while (std::getline(stream, line)) {
-      std::istringstream linestream(line);
-      while (linestream >> item >> itemsize >> unit) {
-        if (item == "MemTotal:") {
-          memTotal = std::stof(itemsize);
-        } else if (item == "MemFree:") {
-          memFree = std::stof(itemsize);
-        } else if (item == "MemAvailable:"){
-          memAvailable = std::stof(itemsize);
-        } else if (item == "Buffers:") {
-          buffers = std::stof(itemsize);
-        } else {
-          if (memTotal*memFree*memAvailable*buffers != 0.0) {
-            break;
-          }
-          else {
-            continue;
+    try {
+      while (std::getline(stream, line)) {
+        std::istringstream linestream(line);
+        while (linestream >> item >> itemsize >> unit) {
+          // Remove space just in case
+          itemsize.erase(std::remove(itemsize.begin(), itemsize.end(), ' '), itemsize.end());
+          if (item == "MemTotal:") {
+            memTotal = std::stof(itemsize);
+          } else if (item == "MemFree:") {
+            memFree = std::stof(itemsize);
+          } else if (item == "MemAvailable:"){
+            memAvailable = std::stof(itemsize);
+          } else if (item == "Buffers:") {
+            buffers = std::stof(itemsize);
+          } else {
+            if (memTotal*memFree*memAvailable*buffers != 0.0) {
+              break;
+            }
+            else {
+              continue;
+            }
           }
         }
       }
+      return (memTotal-memAvailable)/memTotal; 
+    } catch (const std::invalid_argument& arg) {
+      return 0.0;
     }
   }
-
-  return (memTotal-memAvailable)/memTotal; 
+  return 0.0;
 }
 
 // Read and return the system uptime
@@ -165,42 +170,47 @@ float LinuxParser::ProcessCpuUtilization(int pid){
     float utime=-0.099, stime=-0.199, cutime=-0.299, cstime=-0.399, starttime=-0.499;
     float total_time, seconds, hertz, cpu_usage;
     std::string line, value;
+    try {
+      while (std::getline(stream, line)) { 
+        std::istringstream linestream(line);
+        for (int iter = 1; iter <= 22; iter++) {
+          linestream >> value;
+          value.erase(std::remove(value.begin(), value.end(), ' '), value.end());
+          if (iter != 14 && iter != 15 && iter != 16 && iter != 17 && iter != 22) {
+            continue;
+          }
+          else if (iter == 14) {
+            utime = std::stof(value);    
+          } 
+          else if (iter == 15) {
+            stime = std::stof(value);
+          }
+          else if (iter == 16) {
+            cutime = std::stof(value);
+          }
+          else if (iter == 17) {
+            cstime = std::stof(value);
+          }
+          else if (iter == 22) {
+            starttime = std::stof(value);
+          }
+          else {
+            continue;
+          }
+        }
 
-    while (std::getline(stream, line)) { 
-      std::istringstream linestream(line);
-      for (int iter = 1; iter <= 22; iter++) {
-        linestream >> value;
-        if (iter != 14 && iter != 15 && iter != 16 && iter != 17 && iter != 22) {
-          continue;
-        }
-        else if (iter == 14) {
-          utime = std::stof(value);    
-        } 
-        else if (iter == 15) {
-          stime = std::stof(value);
-        }
-        else if (iter == 16) {
-          cutime = std::stof(value);
-        }
-        else if (iter == 17) {
-          cstime = std::stof(value);
-        }
-        else if (iter == 22) {
-          starttime = std::stof(value);
-        }
-        else {
-          continue;
-        }
+        hertz = (float)sysconf(_SC_CLK_TCK);
+        total_time = (float)(utime + stime + cutime + cstime);
+        seconds = (float)LinuxParser::UpTime() - starttime/hertz;
+        cpu_usage = total_time/hertz/seconds;
+
+        return cpu_usage;
       }
-      hertz = (float)sysconf(_SC_CLK_TCK);
-      total_time = (float)(utime + stime + cutime + cstime);
-      seconds = (float)LinuxParser::UpTime() - starttime/hertz;
-      cpu_usage = total_time/hertz/seconds;
-
-      return cpu_usage;
+    } catch (const std::invalid_argument& arg) {
+      return 0.0;
     }
   }
-  return 0;
+  return 0.0;
 }
 
 // Read and return the total number of processes
@@ -334,19 +344,23 @@ long LinuxParser::UpTime(int pid) {
     
     //float total_time, seconds, hertz, cpu_usage;
     std::string line, value;
-
-    while (std::getline(stream, line)) { 
-      std::istringstream linestream(line);
-      for (int iter = 1; iter <= 22; iter++) {
-        linestream >> value;
-        if (iter < 22) {
-          continue;
-        }
-        else {
-          return std::stol(value)/sysconf(_SC_CLK_TCK);
+    
+    try {
+      while (std::getline(stream, line)) { 
+        std::istringstream linestream(line);
+        for (int iter = 1; iter <= 22; iter++) {
+          linestream >> value;
+          if (iter < 22) {
+            continue;
+          }
+          else {
+            return std::stol(value)/sysconf(_SC_CLK_TCK);
+          }
         }
       }
+    } catch (const std::invalid_argument& arg) {
+      return -100;
     }
   }
-  return -100; 
+  return -200; 
 }

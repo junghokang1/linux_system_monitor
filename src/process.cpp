@@ -43,9 +43,18 @@ long int Process::UpTime() {
 
 // Overload the "less than" comparison operator for Process objects
 bool Process::operator<(Process const& a) const { 
+    std::string ramValue1 = this->Ram();
+    std::string ramValue2 = a.Ram();
+    ramValue1.erase(std::remove(ramValue1.begin(), ramValue1.end(), ' '), ramValue1.end());
+    ramValue2.erase(std::remove(ramValue2.begin(), ramValue2.end(), ' '), ramValue2.end());
+
     // First look at the RAM utilization to sort.
-    if (this->Ram() != a.Ram()){
-        return std::stof(a.Ram()) < std::stof(this->Ram()); 
+    if (ramValue1 != ramValue2){
+        try {
+            return std::stof(ramValue2) < std::stof(ramValue1); 
+        } catch (const std::invalid_argument& arg) {
+            return true;
+        }
     }
 
     // If the memory utilization is identical, look at CPU utilization.
