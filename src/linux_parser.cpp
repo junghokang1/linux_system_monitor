@@ -42,9 +42,11 @@ std::string LinuxParser::Kernel() {
   if (stream.is_open()) {
     std::getline(stream, line);
     std::istringstream linestream(line);
-    linestream >> os >> version >> kernel;
+    while (linestream >> os >> version >> kernel) {
+      return kernel;
+    }
   }
-  return kernel;
+  return "bad_kernel";
 }
 
 // Get PIDs of all currently running processes
