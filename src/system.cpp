@@ -27,8 +27,7 @@ vector<Process>& System::Processes() {
     processes_ = {};
 
     for (int pid : vPids) {
-        Process process(pid);
-        processes_.push_back(process);
+        processes_.push_back(pid);
     }
 
     sort(processes_.begin(), processes_.end());

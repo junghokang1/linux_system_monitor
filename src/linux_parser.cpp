@@ -31,7 +31,7 @@ string LinuxParser::OperatingSystem() {
       }
     }
   }
-  return value;
+  return "bad_OS";
 }
 
 // Read data from the filesystem for Kernel
@@ -42,9 +42,8 @@ std::string LinuxParser::Kernel() {
   if (stream.is_open()) {
     std::getline(stream, line);
     std::istringstream linestream(line);
-    while (linestream >> os >> version >> kernel) {
-      return kernel;
-    }
+    linestream >> os >> version >> kernel;
+    return kernel;
   }
   return "bad_kernel";
 }
@@ -128,20 +127,6 @@ long LinuxParser::UpTime() {
   return 1;
 }
 
-
-// TODO: Read and return the number of jiffies for the system
-long LinuxParser::Jiffies() { return 0; }
-
-// TODO: Read and return the number of active jiffies for a PID
-// REMOVE: [[maybe_unused]] once you define the function
-long LinuxParser::ActiveJiffies(int pid[[maybe_unused]]) { return 0; }
-
-// TODO: Read and return the number of active jiffies for the system
-long LinuxParser::ActiveJiffies() { return 0; }
-
-// TODO: Read and return the number of idle jiffies for the system
-long LinuxParser::IdleJiffies() { return 0; }
-
 // Read and return CPU utilization
 std::vector<std::string> LinuxParser::CpuUtilization() { 
   std::ifstream stream(kProcDirectory + kStatFilename);
@@ -201,9 +186,9 @@ float LinuxParser::ProcessCpuUtilization(int pid){
           }
         }
 
-        hertz = (float)sysconf(_SC_CLK_TCK);
-        total_time = (float)(utime + stime + cutime + cstime);
-        seconds = (float)LinuxParser::UpTime() - starttime/hertz;
+        hertz = static_cast<float>(sysconf(_SC_CLK_TCK));
+        total_time = static_cast<float>((utime + stime + cutime + cstime));
+        seconds = static_cast<float>(LinuxParser::UpTime()) - starttime/hertz;
         cpu_usage = total_time/hertz/seconds;
 
         return cpu_usage;
@@ -281,7 +266,7 @@ std::string LinuxParser::Command(int pid) {
 
 // Read and return the memory used by a process
 std::string LinuxParser::Ram(int pid) { 
-  std::ifstream stream(kProcDirectory + "/" + std::to_string(pid) + kStatusFilename);
+  std::ifstream stream(kProcDirectory + std::to_string(pid) + kStatusFilename);
 
   if (stream.is_open()) {
     std::string key, value, line;
@@ -289,7 +274,9 @@ std::string LinuxParser::Ram(int pid) {
       std::replace(line.begin(), line.end(), ':', ' ');
       std::istringstream linestream(line);
       while (linestream >> key >> value) {
-        if (key == "VmSize") {
+        // Using VmRSS rather than VmSize because VmRSS will give exact physical memory 
+        // while VmSize will give virtual memory size.
+        if (key == "VmRSS") {
           return value;
         }
       }
