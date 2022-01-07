@@ -23,7 +23,7 @@ float Process::CpuUtilization() const {
 
 // Return the command that generated this process
 std::string Process::Command() { 
-    return LinuxParser::Command(pid_); 
+    return LinuxParser::Command(pid_).size() > 40 ? LinuxParser::Command(pid_).substr(0,40) + "..." : LinuxParser::Command(pid_); 
 }
 
 // Return this process's memory utilization
