@@ -4,7 +4,7 @@ Starter code for System Monitor Project in the Object Oriented Programming Cours
 
 Follow along with the classroom lesson to complete the project!
 
-![System Monitor](images/linux_system_monitor.png)
+![System Monitor](images/system_monitoring.png)
 
 ## Udacity Linux Workspace
 [Udacity](https://www.udacity.com/) provides a browser-based Linux [Workspace](https://engineering.udacity.com/creating-a-gpu-enhanced-virtual-desktop-for-udacity-497bdd91a505) for students. 
